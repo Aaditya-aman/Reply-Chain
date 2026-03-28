@@ -27,12 +27,14 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Index />} />
-              <Route path="/room/:roomId" element={<RoomView />} />
-              <Route path="/room/:roomId/thread/:messageId" element={<ThreadView />} />
-              <Route path="/profile/:username" element={<ProfilePage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/room/:roomId" element={<RoomView />} />
+                <Route path="/room/:roomId/thread/:messageId" element={<ThreadView />} />
+                <Route path="/profile/:username" element={<ProfilePage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+              </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
