@@ -31,7 +31,7 @@ export function useMessages(chatId: string, sortBy: 'new' | 'top' = 'new') {
     queryFn: async () => {
       let q = supabase
         .from('messages')
-        .select('*, profiles(username, display_name, avatar_url)')
+        .select('*')
         .eq('chat_id', chatId);
 
       if (sortBy === 'top') {
@@ -40,14 +40,27 @@ export function useMessages(chatId: string, sortBy: 'new' | 'top' = 'new') {
         q = q.order('created_at', { ascending: true });
       }
 
-      const { data, error } = await q;
+      const { data: messages, error } = await q;
       if (error) throw error;
-      return (data || []) as Message[];
+
+      // Fetch profiles for all unique user_ids
+      const userIds = [...new Set((messages || []).map((m: any) => m.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', userIds);
+
+      const profileMap: Record<string, any> = {};
+      (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
+
+      return (messages || []).map((m: any) => ({
+        ...m,
+        profiles: profileMap[m.user_id] || null,
+      })) as Message[];
     },
     enabled: !!chatId,
   });
 
-  // Realtime subscription
   useEffect(() => {
     if (!chatId) return;
     const channel = supabase
@@ -56,7 +69,6 @@ export function useMessages(chatId: string, sortBy: 'new' | 'top' = 'new') {
         qc.invalidateQueries({ queryKey: ['messages', chatId] });
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [chatId, qc]);
 
@@ -90,7 +102,7 @@ export function useSendMessage() {
           attachment_url: msg.attachment_url || null,
           attachment_type: msg.attachment_type || null,
         })
-        .select('*, profiles(username, display_name, avatar_url)')
+        .select()
         .single();
       if (error) throw error;
       return data as Message;
