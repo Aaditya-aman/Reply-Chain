@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMessages, useSendMessage, Message } from '@/hooks/useMessages';
-import { useRoomMembers, useJoinRoom, useRooms } from '@/hooks/useRooms';
+import { useRooms } from '@/hooks/useRooms';
 import { useUserVotes } from '@/hooks/useVotes';
 import { useAuth } from '@/contexts/AuthContext';
 import { MessageItem } from '@/components/MessageItem';
@@ -22,9 +22,7 @@ export default function RoomView() {
 
   const { data: messages = [], isLoading } = useMessages(roomId || '', sortBy);
   const { data: userVotes = {} } = useUserVotes(roomId || '');
-  const { data: members = [] } = useRoomMembers(roomId || '');
   const { data: rooms = [] } = useRooms();
-  const joinRoom = useJoinRoom();
   const { user } = useAuth();
   const sendMessage = useSendMessage();
 
@@ -32,16 +30,6 @@ export default function RoomView() {
 
   const currentRoom = rooms.find(r => r.id === roomId);
   const isCreator = currentRoom?.created_by === user?.id;
-  const isMember = user ? (isCreator || members.some(m => m?.id === user.id)) : false;
-
-  const handleJoin = async () => {
-    if (!roomId || !user || isMember || isCreator) return;
-    try {
-      await joinRoom.mutateAsync(roomId);
-    } catch (error) {
-      console.error('Failed to join room', error);
-    }
-  };
 
   const rootMessages = messages.filter(m => !m.parent_id);
   const pinnedMessages = messages.filter(m => m.is_pinned);
@@ -95,16 +83,6 @@ export default function RoomView() {
           <ArrowUpDown className="h-3.5 w-3.5" />
           {sortBy === 'new' ? 'New' : 'Top'}
         </Button>
-        {!isMember && !isCreator && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleJoin}
-            disabled={joinRoom.isPending}
-          >
-            {joinRoom.isPending ? 'Joining...' : 'Join Room'}
-          </Button>
-        )}
       </div>
 
       {/* Pinned section */}
@@ -153,21 +131,14 @@ export default function RoomView() {
 
       {/* Compose */}
       <div className="border-t bg-card px-4 py-3">
-        {isMember ? (
-          <ComposeBox
-            chatId={roomId}
-            parentId={replyTo?.id}
-            parentDepth={replyTo?.depth}
-            onSend={handleSend}
-            onCancel={replyTo ? () => setReplyTo(null) : undefined}
-            placeholder={replyTo ? `Reply to @${replyTo.profiles?.username}...` : 'Write a message...'}
-          />
-        ) : (
-          <div className="text-sm text-muted-foreground">
-            <p>You are not a member of this room yet.</p>
-            <p>Click "Join Room" above to become a member.</p>
-          </div>
-        )}
+        <ComposeBox
+          chatId={roomId}
+          parentId={replyTo?.id}
+          parentDepth={replyTo?.depth}
+          onSend={handleSend}
+          onCancel={replyTo ? () => setReplyTo(null) : undefined}
+          placeholder={replyTo ? `Reply to @${replyTo.profiles?.username}...` : 'Write a message...'}
+        />
       </div>
     </div>
   );
