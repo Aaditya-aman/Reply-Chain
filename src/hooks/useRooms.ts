@@ -88,7 +88,7 @@ export function useRoomMembers(roomId: string) {
         .select('user_id, profiles(*)')
         .eq('room_id', roomId);
       if (error) throw error;
-      return (data || []).map((m: any) => m.profiles);
+      return (data || []).map((m: { user_id: string; profiles: unknown }) => m.profiles);
     },
     enabled: !!roomId,
   });

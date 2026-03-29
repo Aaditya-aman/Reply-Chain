@@ -44,16 +44,16 @@ export function useMessages(chatId: string, sortBy: 'new' | 'top' = 'new') {
       if (error) throw error;
 
       // Fetch profiles for all unique user_ids
-      const userIds = [...new Set((messages || []).map((m: any) => m.user_id))];
+      const userIds = [...new Set((messages || []).map((m: { user_id: string }) => m.user_id))];
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
         .in('id', userIds);
 
-      const profileMap: Record<string, any> = {};
-      (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
+      const profileMap: Record<string, { username: string; display_name: string | null; avatar_url: string | null }> = {};
+      (profiles || []).forEach((p: { id: string; username: string; display_name: string | null; avatar_url: string | null }) => { profileMap[p.id] = p; });
 
-      return (messages || []).map((m: any) => ({
+      return (messages || []).map((m: { user_id: string }) => ({
         ...m,
         profiles: profileMap[m.user_id] || null,
       })) as Message[];

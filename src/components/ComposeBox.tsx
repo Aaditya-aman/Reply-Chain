@@ -39,7 +39,7 @@ export function ComposeBox({ chatId, parentId, parentDepth, onSend, onCancel, pl
 
   const handleSubmit = () => {
     if (!content.trim() && !preview) return;
-    const msg: any = { content: content.trim() };
+    const msg: { content: string; image_url?: string; attachment_url?: string; attachment_type?: string } = { content: content.trim() };
     if (preview) {
       if (preview.type === 'image') {
         msg.image_url = preview.url;

@@ -14,7 +14,7 @@ export function useUserVotes(chatId: string) {
         .eq('user_id', user.id);
       if (error) throw error;
       const map: Record<string, number> = {};
-      (data || []).forEach((v: any) => { map[v.message_id] = v.vote_type; });
+      (data || []).forEach((v: { message_id: string; vote_type: number }) => { map[v.message_id] = v.vote_type; });
       return map;
     },
     enabled: !!user && !!chatId,

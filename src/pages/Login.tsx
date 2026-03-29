@@ -22,8 +22,9 @@ export default function Login() {
     setSubmitting(true);
     try {
       await signIn(email, password);
-    } catch (err: any) {
-      toast({ title: 'Login failed', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      toast({ title: 'Login failed', description: message, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }

@@ -24,8 +24,9 @@ export default function Signup() {
     try {
       await signUp(email, password, username);
       toast({ title: 'Check your email', description: 'We sent you a confirmation link.' });
-    } catch (err: any) {
-      toast({ title: 'Signup failed', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      toast({ title: 'Signup failed', description: message, variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }

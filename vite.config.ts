@@ -12,7 +12,34 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(), 
+    mode === "development" && componentTagger(),
+    {
+      name: 'spa-fallback',
+      apply: 'serve',
+      configureServer(server) {
+        return () => {
+          server.middlewares.use((req, res, next) => {
+            // Allow these to pass through
+            if (
+              req.url === '/' ||
+              /\.(js|css|map|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/.test(req.url) ||
+              req.url.includes('/@') ||
+              req.url.includes('node_modules') ||
+              req.url.includes('/api/')
+            ) {
+              next();
+            } else {
+              // Fallback to index.html for SPA routing
+              req.url = '/index.html';
+              next();
+            }
+          });
+        };
+      },
+    },
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
