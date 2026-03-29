@@ -107,6 +107,38 @@ CREATE POLICY "Authenticated users can view members" ON public.room_members FOR 
 CREATE POLICY "Authenticated users can join rooms" ON public.room_members FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can leave rooms" ON public.room_members FOR DELETE TO authenticated USING (auth.uid() = user_id);
 
+-- Room join requests table
+CREATE TABLE public.room_join_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id UUID NOT NULL REFERENCES public.chat_rooms(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(room_id, user_id)
+);
+
+CREATE INDEX idx_room_join_requests_room_id ON public.room_join_requests(room_id);
+CREATE INDEX idx_room_join_requests_user_id ON public.room_join_requests(user_id);
+
+ALTER TABLE public.room_join_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can view own or their room requests" ON public.room_join_requests FOR SELECT TO authenticated USING (
+  user_id = auth.uid()
+  OR room_id IN (SELECT id FROM public.chat_rooms WHERE created_by = auth.uid())
+);
+
+CREATE POLICY "Authenticated users can request join" ON public.room_join_requests FOR INSERT TO authenticated WITH CHECK (
+  auth.uid() = user_id AND status = 'pending'
+);
+
+CREATE POLICY "Room owners can update request status" ON public.room_join_requests FOR UPDATE TO authenticated USING (
+  room_id IN (SELECT id FROM public.chat_rooms WHERE created_by = auth.uid())
+);
+
+CREATE POLICY "Users can delete their own request" ON public.room_join_requests FOR DELETE TO authenticated USING (
+  user_id = auth.uid()
+);
+
 -- Messages policies
 CREATE POLICY "Authenticated users can view messages" ON public.messages FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Authenticated users can post messages" ON public.messages FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);

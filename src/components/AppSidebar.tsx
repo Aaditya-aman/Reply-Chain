@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRooms, useCreateRoom, ChatRoom } from '@/hooks/useRooms';
+import { useRooms, useCreateRoom, useDeleteRoom, ChatRoom } from '@/hooks/useRooms';
 import { useProfile } from '@/hooks/useProfile';
 import { useNotifications } from '@/hooks/useNotifications';
 import {
@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Plus, Bell, LogOut, User, Hash } from 'lucide-react';
+import { MessageSquare, Plus, Bell, LogOut, User, Hash, Trash2 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Badge } from '@/components/ui/badge';
 
@@ -37,6 +37,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
 
   const createRoom = useCreateRoom();
+  const deleteRoom = useDeleteRoom();
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDesc, setNewRoomDesc] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -99,17 +100,35 @@ export function AppSidebar() {
             <SidebarMenu>
               {rooms.map((room) => (
                 <SidebarMenuItem key={room.id}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={`/room/${room.id}`}
-                      end
-                      className="hover:bg-muted/50"
-                      activeClassName="bg-accent text-accent-foreground font-medium"
-                    >
-                      <Hash className="mr-2 h-4 w-4" />
-                      {!collapsed && <span className="truncate">{room.name}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
+                  <div className="flex items-center w-full">
+                    <SidebarMenuButton asChild className="flex-1">
+                      <NavLink
+                        to={`/room/${room.id}`}
+                        end
+                        className="hover:bg-muted/50"
+                        activeClassName="bg-accent text-accent-foreground font-medium"
+                      >
+                        <Hash className="mr-2 h-4 w-4" />
+                        {!collapsed && <span className="truncate">{room.name}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                    {!collapsed && room.created_by === user?.id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 ml-1 hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (confirm(`Are you sure you want to delete "${room.name}"?`)) {
+                            deleteRoom.mutate(room.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 </SidebarMenuItem>
               ))}
               {rooms.length === 0 && !collapsed && (
